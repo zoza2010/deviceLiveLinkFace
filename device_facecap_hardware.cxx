@@ -13,9 +13,27 @@
 
 #include <math.h>
 #include <winsock2.h>
-#include "tinyosc.h"
 
 ///////////////////////////////////////////////////////////////////////
+
+
+template <typename T>
+void unpackByteArray(T& value, const char byteArrayStart[], bool bigEndian = false) {
+	if (bigEndian) {
+		for (int i = 0; i < sizeof(T); i++)
+		{
+			reinterpret_cast<char*>(&value)[sizeof(T) - 1 - i] = byteArrayStart[i];
+		}
+	}
+	else {
+		for (int i = sizeof(T) - 1; i >= 0; i--)
+		{
+			reinterpret_cast<char*>(&value)[i] = byteArrayStart[i];
+		}
+	}
+}
+
+
 
 bool Cleanup()
 {
@@ -98,7 +116,7 @@ CDevice_FaceCap_Hardware::CDevice_FaceCap_Hardware()
 
 	m_Verbose = false;
 	
-	mNetworkPort		= 9000;
+	mNetworkPort		= 11111;
 	mStreaming			= true;
 	
 	mPosition[0]		= 0;
@@ -160,6 +178,136 @@ bool CDevice_FaceCap_Hardware::PollData()
  *	Fetch a data packet from the device.
  ************************************************/
 
+bool CDevice_FaceCap_Hardware::ProcessMessage(char byteArray[], const int &arraySize)
+{
+	if (arraySize != 314) {
+		FBTrace("Invalid bytearray length!!! Should be 314. Ignoring this bytestream.");
+		return false;
+	}
+	//int version;
+	int nameLength;
+	//unpackByteArray(version, byteArray);
+	unpackByteArray(nameLength, byteArray + 41, true);
+	int nameEndPos = 45 + nameLength;
+	//std::string name = std::string(byteArray + 45, byteArray + nameEndPos);
+	int dataLength = byteArray[nameEndPos + 16];
+
+	if (dataLength != 61) {
+		FBTrace("Wrong data block length. should be 61");
+		return false;
+	}
+
+	char *pCurrentData = byteArray + nameEndPos + 17;
+	float blendShapeValue;
+	for (int i = 0; i < static_cast<uint32_t>(EHardwareBlendshapes::count); i++)
+	{
+		unpackByteArray(blendShapeValue, pCurrentData, true);
+		m_BlendShapes[facecapToLiveLinkFaceIndexMapping[i]] = static_cast<double>(blendShapeValue);
+		pCurrentData += sizeof(blendShapeValue);
+	}
+	return true;
+
+	//head rotation
+	/*
+	for (int i = 0; i < 3; i++)
+	{
+		unpackByteArray(blendShapeValue, pCurrentData, true);
+		mRotation[i] =  static_cast<double>(blendShapeValue);
+		pCurrentData += i * sizeof(float);
+	}
+
+
+	// left eye rotation
+	//unpackByteArray()
+
+
+	return true;
+
+
+
+
+
+	/*
+	bool status = false;
+
+	if (m_Verbose)
+	{
+		printf("[%i bytes] %s %s\n",
+			osc->len, // the number of bytes in the OSC message
+			tosc_getAddress(osc), // the OSC address string, e.g. "/button1"
+			tosc_getFormat(osc)); // the OSC format string, e.g. "f"
+	}
+
+	const char* address = tosc_getAddress(osc);
+	const char* format = tosc_getFormat(osc);
+
+	if (strcmpi(address, "/HT") == 0 && strcmpi(format, "fff") == 0)
+	{
+		// head translation
+		const float x = tosc_getNextFloat(osc);
+		const float y = tosc_getNextFloat(osc);
+		const float z = tosc_getNextFloat(osc);
+
+		mPosition[0] = static_cast<double>(x);
+		mPosition[1] = static_cast<double>(y);
+		mPosition[2] = static_cast<double>(z);
+
+		status = true;
+	}
+	else if (strcmpi(address, "/HR") == 0 && strcmpi(format, "fff") == 0)
+	{
+		// head rotation
+		const float x = tosc_getNextFloat(osc);
+		const float y = tosc_getNextFloat(osc);
+		const float z = tosc_getNextFloat(osc);
+
+		mRotation[0] = static_cast<double>(x);
+		mRotation[1] = static_cast<double>(y);
+		mRotation[2] = static_cast<double>(z);
+
+		status = true;
+	}
+	else if (strcmpi(address, "/ELR") == 0 && strcmpi(format, "ff") == 0)
+	{
+		// left eye rotation
+		const float yaw = tosc_getNextFloat(osc);
+		const float pitch = tosc_getNextFloat(osc);
+
+		m_LeftEye[0] = static_cast<double>(yaw);
+		m_LeftEye[1] = static_cast<double>(pitch);
+
+		status = true;
+	}
+	else if (strcmpi(address, "/ERR") == 0 && strcmpi(format, "ff") == 0)
+	{
+		// right eye rotation
+		const float yaw = tosc_getNextFloat(osc);
+		const float pitch = tosc_getNextFloat(osc);
+
+		m_RightEye[0] = static_cast<double>(yaw);
+		m_RightEye[1] = static_cast<double>(pitch);
+
+		status = true;
+	}
+	else if (strcmpi(address, "/W") == 0 && strcmpi(format, "if") == 0)
+	{
+		// blendshape
+		const int index = tosc_getNextInt32(osc);
+		const float value = tosc_getNextFloat(osc);
+
+		if (index >= 0 && index < static_cast<int>(EHardwareBlendshapes::count))
+		{
+			m_BlendShapes[index] = static_cast<double>(value);
+			status = true;
+		}
+	}
+
+	return status;
+	*/
+
+}
+
+/*
 bool CDevice_FaceCap_Hardware::ProcessMessage(tosc_message *osc)
 {
 	bool status = false;
@@ -238,6 +386,7 @@ bool CDevice_FaceCap_Hardware::ProcessMessage(tosc_message *osc)
 
 	return status;
 }
+*/
 
 int CDevice_FaceCap_Hardware::FetchData()
 {
@@ -270,6 +419,8 @@ int CDevice_FaceCap_Hardware::FetchData()
 
 				if (bytes_received > 0)
 				{
+					
+					/*
 					if (tosc_isBundle(mBuffer)) {
 						tosc_bundle bundle;
 						tosc_parseBundle(&bundle, mBuffer, bytes_received);
@@ -298,6 +449,10 @@ int CDevice_FaceCap_Hardware::FetchData()
 						{
 							FBTrace("[ERROR] incoming message is not recognized \n");
 						}
+					}*/
+					if (ProcessMessage(mBuffer, bytes_received))
+					{
+						number_of_packets = 1;
 					}
 				}
 			}

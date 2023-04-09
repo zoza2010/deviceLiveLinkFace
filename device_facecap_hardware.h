@@ -16,6 +16,16 @@
 //--- Array size defines
 #define	MAX_BUFFER_SIZE		2048
 
+const uint8_t facecapToLiveLinkFaceIndexMapping[52] = {
+	13,7,9,11,5,15,17,14,
+	8,10,12,6,16,18,25,26,
+	27,24,36,28,29,30,31,37,
+	38,39,40,41,42,49,50,33,
+	32,35,34,47,48,45,46,43,
+	44,1,2,0,3,4,19,20,
+	21,22,23,51
+};
+
 
 // incoming blendshapes
 enum class EHardwareBlendshapes : uint8_t
@@ -205,7 +215,7 @@ private:
 protected:
 
 	int StartServer(const int server_port);
-	bool ProcessMessage(tosc_message *osc);
+	bool ProcessMessage(char byteArray[], const int &arraySize);
 
 };
 
