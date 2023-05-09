@@ -270,7 +270,7 @@ int CDevice_FaceCap_Hardware::FetchData()
 				if (m_Verbose)
 				{
 					
-					("bytes received - %d\n", bytes_received);
+					FBTrace("bytes received - %d\n", bytes_received);
 				}
 
 				if (bytes_received > 0)
