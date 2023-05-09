@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 # Set the project name
-project(MyMotionBuilderPlugin)
+project(deviceLiveLinkFace)
 
 # Find the MotionBuilder SDK
 # find_package(MotionBuilder REQUIRED)
@@ -22,13 +22,13 @@ set(SRC_FILES
 )
 
 # Create the plugin target
-add_library(MyPlugin SHARED ${SRC_FILES})
+add_library(deviceLiveLinkFace SHARED ${SRC_FILES})
 
 # Set the target properties
-target_include_directories(MyPlugin PRIVATE ${MotionBuilder_INCLUDE_DIRS})
-target_link_libraries(MyPlugin PRIVATE ${MotionBuilder_LIBRARIES} ws2_32)
+target_include_directories(deviceLiveLinkFace PRIVATE ${MotionBuilder_INCLUDE_DIRS})
+target_link_libraries(deviceLiveLinkFace PRIVATE ${MotionBuilder_LIBRARIES} ws2_32)
 
 # Set the target output directory
-set_target_properties(MyPlugin PROPERTIES
+set_target_properties(deviceLiveLinkFace PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Plugins
 )
